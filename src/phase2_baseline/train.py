@@ -64,25 +64,42 @@ class StatisticalProfiler:
         """Initialize the custom profiling baseline scorer."""
         self.entity_profiles = entity_profiles
         self.global_profile = global_profile
-        self.kdes = {}
+        self._fit_kdes()
         
-        # Fit KDEs for entity log hour density
+    def _fit_kdes(self):
+        """Fit KDE models for entity and global log hour densities."""
+        self.kdes = {}
         for ent_id, prof in self.entity_profiles.items():
-            if prof["num_events"] >= 10:
-                hours = prof["hours"]
-                if np.var(hours) < 1e-4:
-                    self.kdes[ent_id] = None
-                else:
+            if prof.get("num_events", 0) >= 10:
+                hours = prof.get("hours", [])
+                if len(hours) > 0 and np.var(hours) >= 1e-4:
                     try:
                         self.kdes[ent_id] = stats.gaussian_kde(hours, bw_method=0.2)
                     except Exception:
                         self.kdes[ent_id] = None
+                else:
+                    self.kdes[ent_id] = None
                         
-        global_hours = self.global_profile["hours"]
-        try:
-            self.global_kde = stats.gaussian_kde(global_hours, bw_method=0.2)
-        except Exception:
+        global_hours = self.global_profile.get("hours", [])
+        if len(global_hours) > 0:
+            try:
+                self.global_kde = stats.gaussian_kde(global_hours, bw_method=0.2)
+            except Exception:
+                self.global_kde = None
+        else:
             self.global_kde = None
+
+    def __getstate__(self):
+        """Custom pickling state exclusion for scipy.stats.gaussian_kde lambda functions."""
+        state = self.__dict__.copy()
+        state["kdes"] = {}
+        state["global_kde"] = None
+        return state
+
+    def __setstate__(self, state):
+        """Reconstruct KDE models upon unpickling."""
+        self.__dict__.update(state)
+        self._fit_kdes()
             
     def predict_score(self, df_features: pd.DataFrame, df_raw: pd.DataFrame) -> np.ndarray:
         """Calculate custom anomaly risk scores bounded in the range [0.0, 1.0]."""
@@ -128,6 +145,9 @@ class StatisticalProfiler:
             scores.append(score)
             
         return np.array(scores)
+
+import sys
+setattr(sys.modules["__main__"], "StatisticalProfiler", StatisticalProfiler)
 
 class PipelineBaselineTrainer:
     def __init__(self, config_path: str = "config.yaml"):

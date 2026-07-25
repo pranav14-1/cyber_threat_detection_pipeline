@@ -5,6 +5,7 @@ Computes ROC-AUC, PR-AUC, and Precision@top-1%, and generates the ensembled scor
 """
 
 import os
+import sys
 import yaml
 import joblib
 import torch
@@ -16,7 +17,10 @@ from typing import Dict, Any, Tuple
 from src.phase3_sequence_model.dataset import SequenceFeatureExtractor, AccessLogSequenceDataset
 from src.phase3_sequence_model.model import BiLSTMAutoencoder, TransformerAutoencoder
 from src.phase3_sequence_model.score import compute_timestep_scores, calibrate_min_max, apply_static_normalization, apply_rolling_normalization
-from src.phase2_baseline.train import PipelineBaselineTrainer, safe_json_loads
+from src.phase2_baseline.train import PipelineBaselineTrainer, StatisticalProfiler, safe_json_loads
+
+# Bind StatisticalProfiler on current __main__ namespace to resolve any baseline.pkl pickle stream references
+setattr(sys.modules["__main__"], "StatisticalProfiler", StatisticalProfiler)
 
 def load_config(config_path: str = "config.yaml") -> Dict[str, Any]:
     with open(config_path, "r") as f:

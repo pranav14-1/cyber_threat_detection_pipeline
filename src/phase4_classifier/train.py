@@ -30,13 +30,9 @@ from src.phase3_sequence_model.dataset import SequenceFeatureExtractor, AccessLo
 from src.phase3_sequence_model.model import BiLSTMAutoencoder, TransformerAutoencoder
 from src.phase2_baseline.train import PipelineBaselineTrainer, safe_json_loads, haversine_distance
 
-# LightGBM / Scikit-Learn fallback
-try:
-    import lightgbm as lgb
-    HAS_LGBM = True
-except ImportError:
-    HAS_LGBM = False
-    from sklearn.ensemble import HistGradientBoostingClassifier
+# XGBoost & Scikit-Learn imports
+from xgboost import XGBClassifier
+from sklearn.utils.class_weight import compute_sample_weight
 
 
 class ThreatClassifier:
@@ -56,14 +52,14 @@ class ThreatClassifier:
         self.entity_profiles = entity_profiles
         self.global_profile = global_profile
 
-    def check_deterministic_rules(self, geo_velocity_kmh: float, failed_auth_count_5min: int) -> Tuple[str, float, str]:
+    def check_deterministic_rules(self, geo_velocity_kmh: float, failed_auth_count_5min: int, geo_distance_km: float = 0.0) -> Tuple[str, float, str]:
         """
         Check deterministic rule overrides:
-        1. geo_velocity_kmh > 1000 -> impossible_travel
+        1. geo_velocity_kmh > 900 AND geo_distance_km > 500 -> impossible_travel
         2. failed_auth_count_5min > 30 -> brute_force
         """
-        if geo_velocity_kmh > 1000.0:
-            return "impossible_travel", 1.0, "Rule Override: geo_velocity_kmh > 1000 km/h"
+        if geo_velocity_kmh > 900.0 and geo_distance_km > 500.0:
+            return "impossible_travel", 1.0, "Rule Override: geo_velocity_kmh > 900 km/h AND geo_distance > 500 km"
         if failed_auth_count_5min > 30:
             return "brute_force", 1.0, "Rule Override: failed_auth_count_5min > 30"
         return None, 0.0, None
@@ -74,7 +70,6 @@ class ThreatClassifier:
         
         Args:
             feature_dict_or_df: Dictionary or DataFrame row containing input event features.
-            
         Returns:
             Tuple of (attack_type, confidence, top_contributing_features)
         """
@@ -87,9 +82,10 @@ class ThreatClassifier:
 
         # Extract deterministic rule triggers if available
         geo_vel = float(df_feat["geo_velocity_kmh"].iloc[0]) if "geo_velocity_kmh" in df_feat else 0.0
+        geo_dist = float(df_feat["geo_distance_prev_km"].iloc[0]) if "geo_distance_prev_km" in df_feat else 0.0
         failed_auth = int(df_feat["failed_auth_count_5min"].iloc[0]) if "failed_auth_count_5min" in df_feat else 0
 
-        override_class, confidence, rule_reason = self.check_deterministic_rules(geo_vel, failed_auth)
+        override_class, confidence, rule_reason = self.check_deterministic_rules(geo_vel, failed_auth, geo_dist)
         if override_class is not None:
             trigger_feature = "geo_velocity_kmh" if override_class == "impossible_travel" else "failed_auth_count_5min"
             top_features = [(trigger_feature, 1.0), ("rule_override_trigger", 1.0)]
@@ -161,6 +157,7 @@ class PipelineThreatClassifierTrainer:
         distinct_ip_1h = np.zeros(len(df), dtype=int)
         new_resource_1h = np.zeros(len(df), dtype=int)
         geo_velocity = np.zeros(len(df), dtype=float)
+        geo_distance_prev = np.zeros(len(df), dtype=float)
 
         entity_groups = df.groupby("entity_id")
 
@@ -207,13 +204,16 @@ class PipelineThreatClassifierTrainer:
                     dt_hours = (t_curr - ts_sec[i-1]) / 3600.0
                     dist_km = haversine_distance(lats[i-1], lons[i-1], lats[i], lons[i])
                     geo_velocity[curr_idx] = dist_km / dt_hours if dt_hours > 0.0 else 0.0
+                    geo_distance_prev[curr_idx] = dist_km
                 else:
                     geo_velocity[curr_idx] = 0.0
+                    geo_distance_prev[curr_idx] = 0.0
 
         df["failed_auth_count_5min"] = failed_auth_5m
         df["distinct_ip_count_1h"] = distinct_ip_1h
         df["new_resource_count_1h"] = new_resource_1h
         df["geo_velocity_kmh"] = geo_velocity
+        df["geo_distance_prev_km"] = geo_distance_prev
 
         return df
 
@@ -341,8 +341,8 @@ class PipelineThreatClassifierTrainer:
             # Phase 3 error breakdown
             "rec_err_duration", "rec_err_hour_sin", "rec_err_hour_cos", "rec_err_geo_dist",
             "rec_err_resource", "rec_err_auth", "rec_err_os",
-            # Sliding window aggregates
-            "failed_auth_count_5min", "distinct_ip_count_1h", "new_resource_count_1h", "geo_velocity_kmh"
+            # Sliding window aggregates & distance
+            "failed_auth_count_5min", "distinct_ip_count_1h", "new_resource_count_1h", "geo_velocity_kmh", "geo_distance_prev_km"
         ]
 
         X = df_flagged[feature_cols].values
@@ -365,38 +365,31 @@ class PipelineThreatClassifierTrainer:
             X_tr, y_tr = X[train_idx], y[train_idx]
             X_va, y_va = X[val_idx], y[val_idx]
 
-            if HAS_LGBM:
-                clf = lgb.LGBMClassifier(
-                    n_estimators=150,
-                    learning_rate=0.05,
-                    max_depth=6,
-                    num_leaves=31,
-                    class_weight='balanced',
-                    random_state=self.seed,
-                    verbose=-1
-                )
-            else:
-                clf = HistGradientBoostingClassifier(
-                    max_iter=150,
-                    learning_rate=0.05,
-                    max_depth=6,
-                    class_weight='balanced',
-                    random_state=self.seed
-                )
-
-            clf.fit(X_tr, y_tr)
+            sw_tr = compute_sample_weight('balanced', y_tr)
+            clf = XGBClassifier(
+                n_estimators=150,
+                learning_rate=0.08,
+                max_depth=6,
+                subsample=0.8,
+                max_delta_step=1,
+                random_state=self.seed,
+                eval_metric='mlogloss',
+                n_jobs=-1
+            )
+            clf.fit(X_tr, y_tr, sample_weight=sw_tr)
             y_pred_fold = clf.predict(X_va)
 
             # Apply deterministic rule-based assist overrides on val set
             df_val_sub = df_flagged.iloc[val_idx]
             geo_vels = df_val_sub["geo_velocity_kmh"].values
+            geo_dists = df_val_sub["geo_distance_prev_km"].values
             failed_auths = df_val_sub["failed_auth_count_5min"].values
 
             imp_travel_idx = le.transform(["impossible_travel"])[0] if "impossible_travel" in class_names else -1
             brute_force_idx = le.transform(["brute_force"])[0] if "brute_force" in class_names else -1
 
             for k in range(len(val_idx)):
-                if geo_vels[k] > 1000.0 and imp_travel_idx != -1:
+                if geo_vels[k] > 900.0 and geo_dists[k] > 500.0 and imp_travel_idx != -1:
                     y_pred_fold[k] = imp_travel_idx
                     rule_override_count += 1
                 elif failed_auths[k] > 30 and brute_force_idx != -1:
@@ -412,26 +405,39 @@ class PipelineThreatClassifierTrainer:
         print("\n" + classification_report(y, oof_preds, target_names=class_names))
 
         # Final model fit on entire flagged subset
-        print("Training final GBDT threat classifier on all flagged anomaly data...")
-        if HAS_LGBM:
-            final_model = lgb.LGBMClassifier(
-                n_estimators=150,
-                learning_rate=0.05,
-                max_depth=6,
-                num_leaves=31,
-                class_weight='balanced',
-                random_state=self.seed,
-                verbose=-1
-            )
-        else:
-            final_model = HistGradientBoostingClassifier(
-                max_iter=150,
-                learning_rate=0.05,
-                max_depth=6,
-                class_weight='balanced',
-                random_state=self.seed
-            )
-        final_model.fit(X, y)
+        print("Training final XGBoost threat classifier on all flagged anomaly data...")
+        sw_full = compute_sample_weight('balanced', y)
+        final_model = XGBClassifier(
+            n_estimators=150,
+            learning_rate=0.08,
+            max_depth=6,
+            subsample=0.8,
+            max_delta_step=1,
+            random_state=self.seed,
+            eval_metric='mlogloss',
+            n_jobs=-1
+        )
+        final_model.fit(X, y, sample_weight=sw_full)
+
+        # Export predictions CSV
+        print("Exporting Phase 4 predictions to data/processed/phase4_predictions.csv...")
+        df_flagged["predicted_attack_type"] = le.inverse_transform(oof_preds)
+
+        rule_reasons = []
+        for i in range(len(df_flagged)):
+            gv = df_flagged["geo_velocity_kmh"].iloc[i]
+            gd = df_flagged["geo_distance_prev_km"].iloc[i]
+            fa = df_flagged["failed_auth_count_5min"].iloc[i]
+            if gv > 900.0 and gd > 500.0:
+                rule_reasons.append("Rule Override: geo_velocity_kmh > 900 km/h AND geo_distance > 500 km")
+            elif fa > 30:
+                rule_reasons.append("Rule Override: failed_auth_count_5min > 30")
+            else:
+                rule_reasons.append("XGBoost ML Classifier")
+        df_flagged["prediction_source"] = rule_reasons
+
+        pred_cols = ["event_id", "timestamp", "entity_id", "label", "target_class", "predicted_attack_type", "prediction_source"]
+        df_flagged[pred_cols].to_csv("data/processed/phase4_predictions.csv", index=False)
 
         # Plot & Save Confusion Matrix
         cm = confusion_matrix(y, oof_preds)
@@ -484,14 +490,14 @@ Move from "anomalous / not anomalous" to naming the attack category so security 
 know how to respond (brute force ≠ insider drift ≠ impossible travel).
 
 ## Model
-LightGBM / GBDT multi-class ({len(class_names)} classes: 7 attack types + `unknown`), balanced class weights,
+XGBoost Multi-Class ({len(class_names)} classes: 7 attack types + `unknown`), balanced sample weights, `max_delta_step=1`, `subsample=0.8`, `learning_rate=0.08`, `n_estimators=150`,
 5-fold stratified CV with deterministic rule assist.
 
 ## Deterministic Overrides
 | Rule | Trigger | Assigned Class |
 |------|---------|----------------|
-| `geo_velocity_kmh > 1000` | always | `impossible_travel` |
-| `failed_auth_count_5min > 30` | always | `brute_force` |
+| `geo_velocity_kmh > 900 AND geo_distance_prev_km > 500` | strictly satisfied | `impossible_travel` |
+| `failed_auth_count_5min > 30` | strictly satisfied | `brute_force` |
 
 ## Results (5-Fold Stratified Cross-Validation)
 | Attack Type | Precision | Recall | F1-Score |
@@ -503,6 +509,7 @@ LightGBM / GBDT multi-class ({len(class_names)} classes: 7 attack types + `unkno
 ## Artifacts
 - `models/classifier.pkl`
 - `reports/figures/confusion_matrix.png`
+- `data/processed/phase4_predictions.csv`
 """
         with open(readme_path, "w") as f:
             f.write(markdown_content)
