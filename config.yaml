@@ -1,0 +1,14 @@
+# ==============================================================================
+# Pipeline Configuration Parameters
+# ==============================================================================
+
+# Data Generation & Threat Injection Settings
+anomaly_injection_rate: 0.02
+num_entities: 1000
+days_of_data: 60
+
+# Model Sequence & Architecture Settings
+seq_length: 32
+
+# Reproducibility
+random_seed: 42

@@ -1,14 +1,32 @@
-# Phase 1: Synthetic Data Generation & Threat Injection
+# Phase 1 — Synthetic Data Generator
 
-This module is responsible for simulating realistic enterprise environment event logs and injecting synthetic cybersecurity threat campaigns (anomalies). 
+## Purpose
+Generate labeled access-log data because real cybersecurity intrusion datasets
+are scarce, privacy-restricted, and domain-specific.
 
-## 🎯 Objectives
-- **Simulate Normal Behavior:** Generate baseline event logs across various data sources representing routine business activities (e.g., users logging in during business hours, standard web browsing, routine database queries).
-- **Inject Threat Scenarios:** Programmatically inject adversarial patterns mapped to the MITRE ATT&CK framework (e.g., Brute-force attacks, Lateral movement, Credential dumping, and Data exfiltration).
-- **Multiple Data Sources:** Support formats representing system logs (Syslog), authentication logs (Windows Event ID 4624/4625), network traffic flows (NetFlow/PCAP metadata), and process creation logs (Sysmon Event ID 1).
+## Behavioural Assumptions
+- Users have habitual work-hour Gaussian distributions.
+- Geo-location is stable per entity (home region ± noise).
+- Resources accessed follow a Zipf-like preference distribution.
+- 98% of events are benign; 2% split across 7 anomaly types.
 
-## 🚀 Getting Started
-Run the generator script to create raw logs:
+## Injected Attack Taxonomy
+| Type | Rate | Signature |
+|------|------|-----------|
+| brute_force | 0.4% | high-freq fail from 1 IP |
+| impossible_travel | 0.3% | geo-velocity > 1000 km/h |
+| credential_stuffing | 0.3% | many IDs, few IPs, high fail |
+| lateral_movement | 0.3% | new-resource burst |
+| device_spoofing | 0.2% | MAC/OS mismatch |
+| low_slow_exfil | 0.3% | off-hours accumulation |
+| insider_drift | 0.2% | edge case, gradual expansion |
+
+## Outputs
+- `data/raw/logs.csv` — N events
+- `data/raw/labels.csv` — ground truth (hidden from model at inference)
+- `data/raw/entity_profiles.json`
+
+## Reproducibility
 ```bash
-python generate_logs.py --config config.yaml --output ../../data/raw/
+python -m src.phase1_data_gen.generate --config config.yaml
 ```

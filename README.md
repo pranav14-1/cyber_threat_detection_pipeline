@@ -1,76 +1,73 @@
-# Cyber Threat Detection & Anomaly Detection Pipeline
+# AI-Powered Behavioral Anomaly Detection System for Cybersecurity Access Logs
 
-An end-to-end Machine Learning pipeline for detecting anomalies and potential cyber threats in system/network logs. The system ingests raw system/network events, processes them into feature vectors, baseline anomalies using unsupervised methods, models temporal event sequences, classifies specific threat signatures, and provides explainability insights through a real-time security dashboard.
-
----
-
-## 📂 Repository Structure
-
-```directory
-anomaly-detection-cybersec/
-├── README.md                          # Master index
-├── requirements.txt                   # Dependency list
-├── data/
-│   ├── raw/                           # Generated synthetic logs (.json, .csv)
-│   └── processed/                     # Engineered features and normalized datasets
-├── src/
-│   ├── phase1_data_gen/               # Synthetic event generator & threat injector
-│   │   └── README.md
-│   ├── phase2_baseline/               # Unsupervised anomaly baseline models (Isolation Forest, etc.)
-│   │   └── README.md
-│   ├── phase3_sequence_model/         # Deep sequence modeling (LSTMs / Transformers)
-│   │   └── README.md
-│   ├── phase4_classifier/             # Supervised threat signature classification
-│   │   └── README.md
-│   ├── phase5_explainability/         # Model interpretability (SHAP / LIME / Integrated Gradients)
-│   │   └── README.md
-│   └── phase6_dashboard/              # Real-time incident response dashboard
-│       └── README.md
-├── notebooks/                         # Exploratory Data Analysis (EDA) and experimental notebooks
-├── models/                            # Saved model checkpoints and serialized artifacts
-├── reports/                           # Final performance reports and presentation materials
-└── docs/                              # System architecture diagrams and technical documentation
-```
+This repository hosts a multi-stage machine learning pipeline designed to ingest, process, detect, classify, explain, and visualize behavioral anomalies and threat tactics in enterprise cybersecurity access logs.
 
 ---
 
-## 🚀 Pipeline Phases
+## 🔒 Problem Statement
 
-### [Phase 1: Synthetic Data Generation](src/phase1_data_gen/README.md)
-Generates high-fidelity synthetic system events (e.g., authentication logs, network flows, process executions) with customizable user personas and injected threat scenarios (e.g., brute-force, data exfiltration, lateral movement).
+Enterprise environments generate vast quantities of access, authentication, and network logs daily. Traditional Signature-based Intrusion Detection Systems (IDS) fail to identify zero-day exploits, slow-and-low Advanced Persistent Threats (APTs), and insider threat behaviors that do not match predefined signatures. 
 
-### [Phase 2: Baseline Unsupervised Models](src/phase2_baseline/README.md)
-Establishes a baseline detection rate using statistical thresholds and classical unsupervised models like Isolation Forest, local outlier factor (LOF), or Autoencoders.
-
-### [Phase 3: Deep Sequence Modeling](src/phase3_sequence_model/README.md)
-Captures temporal context and sequential patterns in security events to detect slow-and-low attacks and out-of-order execution anomalies using LSTMs, GRUs, or attention-based models.
-
-### [Phase 4: Threat Classification](src/phase4_classifier/README.md)
-Classifies identified anomalies and alerts into specific threat categories (MITRE ATT&CK mappings) using semi-supervised or supervised classifiers.
-
-### [Phase 5: Explainability & Interpretability](src/phase5_explainability/README.md)
-Explains model predictions by highlighting the features, events, or steps that contributed most to a high anomaly score, aiding security analysts in investigation.
-
-### [Phase 6: Incident Response Dashboard](src/phase6_dashboard/README.md)
-A visual dashboard presenting real-time log ingestion, alert timelines, threat classification, and interactive explainability cards.
+This project implements an **AI-powered Behavioral Anomaly Detection pipeline**. By combining statistical baseline models, deep temporal sequence modeling, supervised threat classifiers, and model explainability techniques, the system enables security operations center (SOC) analysts to detect anomalous event sequences and map them to known MITRE ATT&CK techniques with high confidence and transparency.
 
 ---
 
-## 🛠️ Setup & Installation
+## 📂 7-Deliverable Project Index
 
-1. **Clone the Repository:**
+1. **[Phase 1: Synthetic Data Generation & Threat Injection](src/phase1_data_gen/README.md)**
+   * Simulates enterprise logs and programmatically injects multi-stage attack scenarios.
+2. **[Phase 2: Unsupervised Anomaly Detection Baseline](src/phase2_baseline/README.md)**
+   * Establishes detection baseline using unsupervised models (e.g., Isolation Forest, LOF).
+3. **[Phase 3: Deep Sequence Modeling](src/phase3_sequence_model/README.md)**
+   * Detects sequential anomalies using recurrent (LSTM/GRU) or attention-based architectures.
+4. **[Phase 4: Threat Signature Classification](src/phase4_classifier/README.md)**
+   * Classifies anomalies into specific threat categories mapped to the MITRE ATT&CK framework.
+5. **[Phase 5: Model Explainability & Interpretability](src/phase5_explainability/README.md)**
+   * Pinpoints why an anomaly was flagged using SHAP/LIME and attention attribution.
+6. **[Phase 6: Incident Triage & Explainability Dashboard](src/phase6_dashboard/README.md)**
+   * Interactive Streamlit dashboard for real-time alert triage and explanation visualization.
+7. **[Phase 7: Exploratory Notebooks & Reports](notebooks/README.md)** (Or check [notebooks/](notebooks/) / [reports/](reports/) / [docs/](docs/))
+   * Houses EDA notebooks, evaluation metrics comparisons, and final pipeline design reports.
+
+---
+
+## ✅ Evaluation Criteria Checklist
+
+- [ ] **Data Quality & Realism:** Access logs resemble authentic enterprise metadata (timestamps, IP/port pairs, user IDs, event success flags).
+- [ ] **Threat Coverage:** Pipeline injects and successfully triggers alerts for at least 3 distinct MITRE ATT&CK techniques.
+- [ ] **Detection Rate:** Unsupervised baselines flag anomalies with a False Positive Rate (FPR) ≤ 5%.
+- [ ] **Temporal Sensitivity:** Sequence model successfully flags out-of-order execution flows (e.g., download without prior auth).
+- [ ] **Classification Accuracy:** Supervised classifier achieves a Macro F1-score ≥ 85% on labeled threat sequences.
+- [ ] **Explainability Coherence:** SHAP values highlight relevant network traffic/activity attributes as primary alert causes.
+- [ ] **Dashboard Usability:** Streamlit app loads, renders alert timelines, and displays explanation cards in under 2 seconds.
+
+---
+
+## 🔄 Reproducibility Instructions
+
+Execute the pipeline stages sequentially from the project root using Python:
+
+1. **Generate Synthetic Logs:**
    ```bash
-   git clone <repo-url>
-   cd cyber_threat_detection_pipeline
+   python -m src.phase1_data_gen.generate
    ```
-
-2. **Create and Activate Virtual Environment:**
+2. **Train Unsupervised Baseline Models:**
    ```bash
-   python3 -m venv venv
-   source venv/bin/activate
+   python -m src.phase2_baseline.train
    ```
-
-3. **Install Dependencies:**
+3. **Train Temporal Sequence Model:**
    ```bash
-   pip install -r requirements.txt
+   python -m src.phase3_sequence_model.train
+   ```
+4. **Train Supervised Threat Classifier:**
+   ```bash
+   python -m src.phase4_classifier.train
+   ```
+5. **Compute Model Explanations:**
+   ```bash
+   python -m src.phase5_explainability.explain
+   ```
+6. **Run Interactive Dashboard:**
+   ```bash
+   python -m src.phase6_dashboard.app
    ```

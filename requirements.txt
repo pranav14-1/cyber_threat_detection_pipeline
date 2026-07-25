@@ -1,15 +1,19 @@
-# Data Handling & Processing
+# Core Data Science & Processing
 numpy>=1.22.0
 pandas>=1.4.0
 scikit-learn>=1.0.0
+joblib>=1.1.0
+networkx>=2.6.0
 
-# Deep Learning / Sequence Modeling
+# Synthetic Data Generation
+faker>=13.0.0
+
+# Deep Learning Frameworks
 torch>=1.11.0
-tensorboard>=2.8.0
+tensorflow>=2.8.0
 
-# Explainability & Interpretability
+# Model Explainability & Interpretability
 shap>=0.40.0
-lime>=0.2.0
 
 # Visualization & Dashboarding
 streamlit>=1.8.0
@@ -17,13 +21,6 @@ plotly>=5.6.0
 matplotlib>=3.5.0
 seaborn>=0.11.0
 
-# Data Generation & Utilities
-pydantic>=1.9.0
-pyyaml>=6.0
+# Utilities
 tqdm>=4.64.0
-
-# Development
-jupyter>=1.0.0
-pytest>=7.0.0
-black>=22.1.0
-flake8>=4.0.0
+pyyaml>=6.0
