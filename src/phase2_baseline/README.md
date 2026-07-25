@@ -1,14 +1,34 @@
-# Phase 2: Unsupervised Anomaly Detection Baseline
+# Phase 2 — Baseline Profiling Model
 
-This module establishes a baseline detection capability using classic unsupervised ML algorithms and statistical outlier detection methods. It consumes processed feature vectors from Phase 1 and flags unusual behaviors without requiring labeled historical threat data.
+## Purpose
+Establish a per-entity representation of "normal" so any large deviation
+produces an initial anomaly score. Serves as a competitive baseline and a
+warm-start for the sequence model.
 
-## 🎯 Objectives
-- **Establish Baselines:** Implement classical unsupervised algorithms (e.g., Isolation Forest, Local Outlier Factor, One-Class SVM, and PyOD autoencoders) to evaluate baseline detection metrics.
-- **Unsupervised Evaluation:** Evaluate the false positive rate (FPR) vs. true positive rate (TPR) when logs are passed directly through unsupervised models.
-- **Feature Importance Mapping:** Capture basic outlier scores and feature attribution for identified anomalies to pass downstream.
+## Models Evaluated
+- Statistical Profile (KDE + distance scores)
+- Isolation Forest
+- One-Class SVM
 
-## 🚀 Getting Started
-To train the baseline models and generate outlier scores:
-```bash
-python train_baseline.py --input ../../data/processed/features.csv --model isolation_forest
-```
+## Best Model & Metrics
+The model performance was evaluated using a chronological split (70% train / 15% validation / 15% test). The metrics are listed below:
+
+| Model | ROC-AUC | PR-AUC | FPR@1% |
+|-------|---------|--------|--------|
+| StatProfile | 0.9062 | 0.3834 | 0.0038 |
+| IForest | 0.9133 | 0.2880 | 0.0067 |
+| OC-SVM | 0.9755 | 0.7717 | 0.0013 |
+
+**Selected Best Model:** `OC-SVM`
+
+**Test Set Evaluation Metrics (Best Model):**
+- **ROC-AUC:** 0.9637
+- **PR-AUC:** 0.6285
+- **FPR@1%:** 0.0021
+
+## Cold-Start Policy
+Entities with <10 events in the training data use a fallback global population profile, logging a `"cold_start=True"` audit trail flag.
+
+## Artifacts
+- `models/baseline.pkl`
+- `models/entity_profiles.pkl`
