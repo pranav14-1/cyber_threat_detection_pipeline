@@ -17,9 +17,9 @@ The performance of the models evaluated on the chronological test split (15% tes
 
 | Model | ROC-AUC | PR-AUC | P@1% |
 |-------|---------|--------|------|
-| BiLSTM-AE | 0.7809 | 0.3312 | 0.5507 |
+| BiLSTM-AE | 0.8360 | 0.3386 | 0.5629 |
 | Transformer | 0.0000 | 0.0000 | 0.0000 |
-| Baseline (Phase 2) | 0.9683 | 0.6602 | 0.8094 |
+| Baseline (Phase 2) | 0.9647 | 0.6381 | 0.8042 |
 
 **Selected Best Sequence Model:** `BILSTM`
 
