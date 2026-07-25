@@ -1,0 +1,32 @@
+# Ignore virtual environments
+venv/
+.venv/
+env/
+
+# Ignore local Python caches
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.pytest_cache/
+.ipynb_checkpoints/
+
+# Ignore version control and local configs
+.git/
+.gitignore
+.env
+.env.local
+
+# Ignore data and model artifacts (will be mounted or generated inside the container)
+data/raw/*
+!data/raw/.gitkeep
+data/processed/*
+!data/processed/.gitkeep
+models/*
+!models/.gitkeep
+reports/*.pdf
+
+# Ignore Docker files themselves
+Dockerfile
+docker-compose.yml
+.dockerignore
