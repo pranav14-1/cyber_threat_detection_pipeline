@@ -2,13 +2,31 @@
 # Pipeline Configuration Parameters
 # ==============================================================================
 
-# Data Generation & Threat Injection Settings
+# Data Generation & Threat Injection Settings (Phase 1)
 anomaly_injection_rate: 0.02
 num_entities: 1000
 days_of_data: 60
 
-# Model Sequence & Architecture Settings
+# File & Output Directories
+output_logs_path: "data/raw/logs.csv"
+output_labels_path: "data/raw/labels.csv"
+output_profiles_path: "data/raw/entity_profiles.json"
+
+# Model Sequence & Architecture Settings (Phase 3)
 seq_length: 32
+batch_size: 128
+epochs: 20
+learning_rate: 0.001
+lstm_hidden_dim: 128
+transformer_heads: 4
+transformer_layers: 3
+
+# Ensembling Weights (Combining Phase 2 Snapshot + Phase 3 Sequence)
+sequence_model_weight: 0.5
+baseline_model_weight: 0.5
+
+# Classification & Threshold Settings (Phase 4)
+alert_threshold_percentile: 0.95 # Top 5% flagged for classification
 
 # Reproducibility
 random_seed: 42
