@@ -68,12 +68,12 @@ The pipeline directly satisfies and exceeds all **Honeywell Campus Connect Hacka
 | Evaluation Criterion | Target / Benchmark Requirement | Pipeline Achievement / Metric | Status |
 | :--- | :--- | :--- | :---: |
 | **Class Imbalance Resilience** | Severe imbalance (98% Normal, 2% Malicious) | Overall Accuracy = **0.98**, Macro F1 = **0.95** across all attack tactics | ✅ Exceeded |
-| **Strict FPR Budget** | Enforce $\text{FPR} \le 1.0\%$ alert budget | StatProfile achieved **FPR = 0.54%** on test set (threshold calibrated at 99th percentile) | ✅ Exceeded |
+| **Strict FPR Budget** | Enforce FPR &le; 1.0% alert budget | StatProfile achieved **FPR = 0.54%** on test set (threshold calibrated at 99th percentile) | ✅ Exceeded |
 | **Anomaly Classification** | Multi-class threat taxonomy mapping | **Brute Force F1 = 1.00**, **Credential Stuffing F1 = 1.00**, **Impossible Travel F1 = 1.00** | ✅ Exceeded |
 | **Sequence Sensitivity** | Flag out-of-order execution steps | BiLSTM-AE ensemble boosted PR-AUC from **0.2246 to 0.3933 (+75.1% uplift)** | ✅ Exceeded |
 | **Analyst Explainability** | Transparent XAI for SOC analysts | SHAP attributions translated into plain-English top-3 narrative reason cards | ✅ Exceeded |
-| **Cold-Start Handling** | Robust fallback for new entities | Explicit fallback for entities with $<5$ events (`is_cold_start = 1.0`) to global population statistics | ✅ Exceeded |
-| **Concept Drift Resilience** | Adaptation against temporal shifts | Dynamic 7-day exponential decay factor $\text{profile\_decay\_factor} = \exp(-\lambda \Delta t)$ | ✅ Exceeded |
+| **Cold-Start Handling** | Robust fallback for new entities | Explicit fallback for entities with <5 events (`is_cold_start = 1.0`) to global population statistics | ✅ Exceeded |
+| **Concept Drift Resilience** | Adaptation against temporal shifts | Dynamic 7-day exponential decay factor: $\text{Profile Decay} = \exp(-\lambda \cdot \Delta t)$ | ✅ Exceeded |
 
 ### Detailed Performance Breakdown across Phases
 
@@ -120,12 +120,12 @@ The pipeline directly satisfies and exceeds all **Honeywell Campus Connect Hacka
 
 ### 2. Rule-ML Hybrid Assist Strategy
 - Machine learning models can struggle with strict physical boundaries. We implement deterministic assist overrides for physical domain invariants:
-  - **Impossible Travel Constraint:** If $\text{travel\_velocity} > 900\text{ km/h}$ AND $\text{spatial\_distance} > 500\text{ km}$, immediately force label to `impossible_travel`.
-  - **Brute Force Constraint:** If $\text{failed\_auth\_count\_5min} > 30$, immediately force label to `brute_force`.
+  - **Impossible Travel Constraint:** If $\text{Velocity} > 900\text{ km/h}$ AND $\text{Distance} > 500\text{ km}$, immediately force label to `impossible_travel`.
+  - **Brute Force Constraint:** If $\text{Failed Auth Count (5min)} > 30$, immediately force label to `brute_force`.
 
-### 3. Cold-Start Fallback Policy ($<5$ Historical Events)
+### 3. Cold-Start Fallback Policy (<5 Historical Events)
 - **Problem:** New users or service accounts lack sufficient log history to construct personal baseline distributions, causing false alerts.
-- **Solution:** If an entity has $<5$ historical log events:
+- **Solution:** If an entity has <5 historical log events:
   1. Set `is_cold_start = 1.0`.
   2. Fall back to global population medians/means for feature normalization (e.g., global home coordinates, global typical resources).
   3. Pass `is_cold_start` as an explicit feature into Phase 4 and display `cold_start: true` on SOC triage cards.
@@ -133,11 +133,11 @@ The pipeline directly satisfies and exceeds all **Honeywell Campus Connect Hacka
 ### 4. Mathematical Concept Drift Adaptation (7-Day Exponential Decay)
 - User behavior evolves over time (e.g., changing shifts, novel project resources). We incorporate an exponential profile decay factor:
 
-$$\text{profile\_decay\_factor} = \exp\left(-\lambda \cdot \Delta t_{\text{days}}\right), \quad \text{where } \lambda = \frac{\ln(2)}{7.0} \approx 0.09902$$
+$$\text{Profile Decay Factor} = \exp\left(-\lambda \cdot \Delta t_{\text{days}}\right), \quad \text{where } \lambda = \frac{\ln(2)}{7.0} \approx 0.09902$$
 
 - **Properties:**
-  - $\Delta t = 0\text{ days} \implies \text{decay\_factor} = 1.00$ (Full baseline confidence).
-  - $\Delta t = 7\text{ days} \implies \text{decay\_factor} = 0.50$ (50% half-life decay).
+  - $\Delta t = 0\text{ days} \implies \text{Decay Factor} = 1.00$ (Full baseline confidence).
+  - $\Delta t = 7\text{ days} \implies \text{Decay Factor} = 0.50$ (50% half-life decay).
   - Flags dormant account reactivation and gradual behavioral drift.
 
 ---
