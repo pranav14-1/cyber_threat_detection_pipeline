@@ -10,7 +10,7 @@ A multi-stage, production-grade hybrid AI system designed to ingest high-through
 
 ---
 
-## 📌 Executive Summary & Architecture Overview
+## Executive Summary & Architecture Overview
 
 Enterprise access logs present severe class imbalance (**98% normal user activity vs. 2% malicious threats**), concept drift over time, and zero-day attack tactics that bypass static signature rules. This pipeline solves these challenges using a **6-Phase Hybrid AI Architecture**:
 
@@ -61,7 +61,7 @@ Enterprise access logs present severe class imbalance (**98% normal user activit
 
 ---
 
-## 📊 Evaluation Criteria & Key Performance Indicators
+## Evaluation Criteria & Key Performance Indicators
 
 The pipeline directly satisfies and exceeds all **Honeywell Campus Connect Hackathon Evaluation Benchmarks**:
 
@@ -98,7 +98,7 @@ The pipeline directly satisfies and exceeds all **Honeywell Campus Connect Hacka
 | **Lateral Movement** | `0.88` | `0.90` | **`0.89`** | 450 |
 | **Overall Micro / Macro Avg** | **`0.98`** | **`0.98`** | **`0.95`** | **4,472** |
 
-### 📈 Visual Performance Benchmarks
+### Visual Performance Benchmarks
 
 #### 1. Deep Sequence Model Uplift Curves (Phase 3)
 *Ensemble of BiLSTM-AE sequence reconstruction errors and statistical baseline achieves a **+75.1% relative PR-AUC improvement** over static baseline alone.*
@@ -112,7 +112,7 @@ The pipeline directly satisfies and exceeds all **Honeywell Campus Connect Hacka
 
 ---
 
-## 🏗️ System Design Choices & Rationale
+## System Design Choices & Rationale
 
 ### 1. Unsupervised + Supervised Hybrid Paradigm
 - **Why Unsupervised First?** Real-world zero-day cyber threats lack pre-existing ground-truth labels. Phase 2 (KDE + Haversine) and Phase 3 (BiLSTM-AE) flag statistically rare events and temporal order violations without requiring labeled historical attacks.
@@ -142,7 +142,7 @@ $$\text{Profile Decay Factor} = \exp\left(-\lambda \cdot \Delta t_{\text{days}}\
 
 ---
 
-## 🛠️ Phase-by-Phase Technical Breakdown
+## Phase-by-Phase Technical Breakdown
 
 ```
 src/
@@ -177,7 +177,7 @@ src/
 
 ---
 
-## 🚀 Installation & Quickstart Guide
+## Installation & Quickstart Guide
 
 ### Prerequisites
 - Python 3.10 or higher
@@ -217,7 +217,7 @@ streamlit run src/phase6_dashboard/app.py
 
 ---
 
-## 🧠 Explainability & SOC Analyst Workflow
+## Explainability & SOC Analyst Workflow
 
 Phase 5 produces standardized explanation JSON cards for any flagged `event_id` via `explain(event_id)`.
 
