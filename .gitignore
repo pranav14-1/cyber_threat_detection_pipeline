@@ -27,9 +27,15 @@ models/*.pkl
 models/*.h5
 models/*.pt
 
-# Archives
+# Archives & OS Metadata
 *.tar.gz
 *.zip
+.DS_Store
+Thumbs.db
+*.log
+*.tmp
+.pytest_cache/
+.ipynb_checkpoints/
 
 # Keep gitkeep files tracked
 !models/.gitkeep

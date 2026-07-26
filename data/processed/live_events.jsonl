@@ -1,0 +1,15 @@
+{"event_id": "c42ad222-3ccf-4943-8f9c-06f1fdc307fd", "timestamp": "2026-07-26T05:48:38.558926Z", "entity_id": "DEV_0664", "predicted_attack_type": "unknown", "risk_score": 0.85}
+{"event_id": "b279f5e3-d825-4075-b71d-0eccc08ac7f7", "timestamp": "2026-07-26T05:48:38.559154Z", "entity_id": "SRV_0162", "predicted_attack_type": "unknown", "risk_score": 0.85}
+{"event_id": "528b2b0e-7df5-4d1c-858c-32a795581894", "timestamp": "2026-07-26T05:48:38.559289Z", "entity_id": "USR_0289", "predicted_attack_type": "credential_stuffing", "risk_score": 0.85}
+{"event_id": "7eab0ebd-fdf8-443f-98f0-ed1273923e19", "timestamp": "2026-07-26T05:48:38.559422Z", "entity_id": "DEV_0164", "predicted_attack_type": "unknown", "risk_score": 0.85}
+{"event_id": "8c7678e5-079f-4407-9aa2-57fc688b0f64", "timestamp": "2026-07-26T05:48:38.559533Z", "entity_id": "SRV_0533", "predicted_attack_type": "impossible_travel", "risk_score": 0.85}
+{"event_id": "222d8ad6-3a49-4893-9362-9aeed0c843d3", "timestamp": "2026-07-26T05:48:38.559639Z", "entity_id": "DEV_0799", "predicted_attack_type": "unknown", "risk_score": 0.85}
+{"event_id": "a3118be3-6ffc-4b00-b9d8-a4c0dcfa8abf", "timestamp": "2026-07-26T05:48:38.559744Z", "entity_id": "SRV_0128", "predicted_attack_type": "unknown", "risk_score": 0.85}
+{"event_id": "33abdc83-bb96-49f6-b632-5640cf57ba2e", "timestamp": "2026-07-26T05:48:38.559849Z", "entity_id": "USR_0172", "predicted_attack_type": "low_slow_exfil", "risk_score": 0.85}
+{"event_id": "6c0996a2-1d7c-484a-9d20-23c9d28ef5fd", "timestamp": "2026-07-26T05:48:38.560002Z", "entity_id": "USR_0351", "predicted_attack_type": "impossible_travel", "risk_score": 0.85}
+{"event_id": "4e3b7bfc-0724-4c6c-aea1-72d403051a68", "timestamp": "2026-07-26T05:48:38.560160Z", "entity_id": "SRV_0058", "predicted_attack_type": "unknown", "risk_score": 0.85}
+{"event_id": "e34a1d80-6562-4c7b-9347-e76370e8891d", "timestamp": "2026-07-26T05:48:38.560315Z", "entity_id": "USR_0172", "predicted_attack_type": "low_slow_exfil", "risk_score": 0.85}
+{"event_id": "e500a71d-a1b8-4205-a3f6-3410efa99dfc", "timestamp": "2026-07-26T05:48:38.560459Z", "entity_id": "USR_0100", "predicted_attack_type": "credential_stuffing", "risk_score": 0.85}
+{"event_id": "35c8d444-d304-4191-93dd-a916efa12de2", "timestamp": "2026-07-26T05:48:38.560573Z", "entity_id": "USR_0830", "predicted_attack_type": "low_slow_exfil", "risk_score": 0.85}
+{"event_id": "70da0eb6-8397-4619-a26f-7edc4e06eea8", "timestamp": "2026-07-26T05:48:38.560679Z", "entity_id": "DEV_0799", "predicted_attack_type": "impossible_travel", "risk_score": 0.85}
+{"event_id": "42669bf4-ccad-45f3-9a32-960897566e05", "timestamp": "2026-07-26T05:48:38.560783Z", "entity_id": "DEV_0514", "predicted_attack_type": "unknown", "risk_score": 0.85}

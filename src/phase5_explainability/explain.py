@@ -106,25 +106,46 @@ class ExplainabilityEngine:
         
         self.classifier_payload = joblib.load(classifier_path)
         
-        # 2. Build or Load Pre-processed Feature Data
-        # Re-compute feature dataset using Phase 4 and Phase 2 baseline pipeline trainers
-        trainer = PipelineThreatClassifierTrainer(config_path="config.yaml")
-        df_base, _, _ = trainer.load_and_prepare_data()
+        # 2. Build or Load Pre-processed Feature Data (Instant Loading)
+        features_cache_path = "data/processed/phase5_features.csv"
+        pred_csv = "data/processed/phase4_predictions.csv"
+        
+        if os.path.exists(features_cache_path):
+            print(f"Loading cached explainability features from {features_cache_path}...")
+            self.df_processed = pd.read_csv(features_cache_path)
+        elif os.path.exists(pred_csv):
+            print(f"Loading instant predictions dataset from {pred_csv}...")
+            df_pred = pd.read_csv(pred_csv)
+            # Ensure all required classifier features exist as columns to prevent KeyError
+            feature_names = getattr(self.classifier_payload, "feature_names", [])
+            for f in feature_names:
+                if f not in df_pred.columns:
+                    df_pred[f] = 0.0
+            self.df_processed = df_pred
+        else:
+            print("Extracting feature matrix for Explainability Engine...")
+            trainer = PipelineThreatClassifierTrainer(config_path="config.yaml")
+            df_base, _, _ = trainer.load_and_prepare_data()
 
-        entity_profiles = self.classifier_payload.entity_profiles
-        global_profile = self.classifier_payload.global_profile
-        baseline_trainer = PipelineBaselineTrainer(config_path="config.yaml")
+            entity_profiles = self.classifier_payload.entity_profiles
+            global_profile = self.classifier_payload.global_profile
+            baseline_trainer = PipelineBaselineTrainer(config_path="config.yaml")
 
-        # 2.1 Extract Phase 2 handcrafted features
-        X_base, _ = baseline_trainer.extract_features(df_base, entity_profiles, global_profile)
-        for col in X_base.columns:
-            if col != "session_duration":
-                df_base[col] = X_base[col]
+            # 2.1 Extract Phase 2 handcrafted features
+            X_base, _ = baseline_trainer.extract_features(df_base, entity_profiles, global_profile)
+            for col in X_base.columns:
+                if col != "session_duration":
+                    df_base[col] = X_base[col]
 
-        # 2.2 Sliding window aggregates & Phase 3 reconstruction errors
-        df_base = trainer.compute_sliding_window_features(df_base, entity_profiles)
-        df_full = trainer.compute_phase3_reconstruction_breakdown(df_base)
-        self.df_processed = df_full
+            # 2.2 Sliding window aggregates & Phase 3 reconstruction errors
+            df_base = trainer.compute_sliding_window_features(df_base, entity_profiles)
+            df_full = trainer.compute_phase3_reconstruction_breakdown(df_base)
+            self.df_processed = df_full
+            
+            # Cache full feature matrix to disk
+            os.makedirs("data/processed", exist_ok=True)
+            self.df_processed.to_csv(features_cache_path, index=False)
+            print(f"Saved full feature matrix to {features_cache_path}")
         
         # 3. Load or Build & Cache SHAP Explainer
         explainer_path = "models/shap_explainer.pkl"
