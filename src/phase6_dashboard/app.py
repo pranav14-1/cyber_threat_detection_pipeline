@@ -614,23 +614,29 @@ elif st.session_state.current_page == "Alert Detail":
         entity_logs = df_logs[df_logs["entity_id"] == target_entity].sort_values("timestamp").tail(20)
         
         if len(entity_logs) > 0 and "lat" in entity_logs.columns and "lon" in entity_logs.columns:
-            fig_map = px.scatter_geo(
-                entity_logs,
-                lat="lat",
-                lon="lon",
-                hover_name="source_ip",
-                hover_data=["timestamp", "auth_method", "resource_accessed"],
-                title=f"Spatial Trajectory for {target_entity}",
-                projection="natural earth"
-            )
-            fig_map.update_layout(
-                template="plotly_dark",
-                paper_bgcolor="#0D1117",
-                geo=dict(bgcolor="#0D1117", showland=True, landcolor="#161B22", countrycolor="#30363D"),
-                height=380,
-                margin=dict(l=10, r=10, t=30, b=10)
-            )
-            st.plotly_chart(fig_map, use_container_width=True)
+            h_name = "source_ip" if "source_ip" in entity_logs.columns else ("entity_id" if "entity_id" in entity_logs.columns else None)
+            h_data = [c for c in ["timestamp", "predicted_attack_type", "risk_score", "auth_method", "resource_accessed"] if c in entity_logs.columns]
+            
+            try:
+                fig_map = px.scatter_geo(
+                    entity_logs,
+                    lat="lat",
+                    lon="lon",
+                    hover_name=h_name,
+                    hover_data=h_data if h_data else None,
+                    title=f"Spatial Trajectory for {target_entity}",
+                    projection="natural earth"
+                )
+                fig_map.update_layout(
+                    template="plotly_dark",
+                    paper_bgcolor="#0D1117",
+                    geo=dict(bgcolor="#0D1117", showland=True, landcolor="#161B22", countrycolor="#30363D"),
+                    height=380,
+                    margin=dict(l=10, r=10, t=30, b=10)
+                )
+                st.plotly_chart(fig_map, use_container_width=True)
+            except Exception:
+                st.info(f"Spatial trajectory visualization unavailable for {target_entity}.")
 
         # Analyst Feedback Loop Form
         st.markdown('<div class="section-title">ANALYST TRIAGE DECISION & FEEDBACK LOGGING</div>', unsafe_allow_html=True)
