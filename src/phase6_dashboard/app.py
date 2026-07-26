@@ -206,12 +206,22 @@ def load_dashboard_datasets():
         st.stop()
 
     df_pred = pd.read_csv(predictions_path)
-    df_logs = pd.read_csv(logs_path)
-    df_labels = pd.read_csv(labels_path)
+
+    # Safe fallback if raw logs or labels are missing (e.g. cloud deployment)
+    if os.path.exists(logs_path):
+        df_logs = pd.read_csv(logs_path)
+    else:
+        df_logs = df_pred.copy()
+
+    if os.path.exists(labels_path):
+        df_labels = pd.read_csv(labels_path)
+    else:
+        df_labels = df_pred.copy()
 
     # Parse timestamps and strip timezone for clean comparisons
     df_pred["timestamp"] = pd.to_datetime(df_pred["timestamp"], format="ISO8601").dt.tz_localize(None)
-    df_logs["timestamp"] = pd.to_datetime(df_logs["timestamp"], format="ISO8601").dt.tz_localize(None)
+    if "timestamp" in df_logs.columns:
+        df_logs["timestamp"] = pd.to_datetime(df_logs["timestamp"], format="ISO8601").dt.tz_localize(None)
 
     # Merge entity_type if missing
     if "entity_type" not in df_pred.columns:
