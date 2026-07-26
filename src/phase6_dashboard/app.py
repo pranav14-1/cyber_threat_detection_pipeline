@@ -312,11 +312,15 @@ st.sidebar.title("SECURITY OPERATIONS")
 st.sidebar.markdown("<span style='color: #8B949E; font-size: 12px; font-weight: 600;'>ENTERPRISE SOC INTEL</span>", unsafe_allow_html=True)
 st.sidebar.markdown("<br>", unsafe_allow_html=True)
 
-st.sidebar.radio(
+page_options = ["Alert Queue", "Alert Detail", "Entity History", "System Health"]
+current_nav_idx = page_options.index(st.session_state.current_page) if st.session_state.current_page in page_options else 0
+
+selected_nav = st.sidebar.radio(
     "NAVIGATION VIEW",
-    ["Alert Queue", "Alert Detail", "Entity History", "System Health"],
-    key="current_page"
+    page_options,
+    index=current_nav_idx
 )
+st.session_state.current_page = selected_nav
 
 st.sidebar.markdown("---")
 st.sidebar.markdown("<span style='color: #8B949E; font-size: 11px; font-weight: 700; letter-spacing: 0.8px;'>GLOBAL TRIAGE FILTERS</span>", unsafe_allow_html=True)
