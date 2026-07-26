@@ -251,11 +251,17 @@ def load_dashboard_datasets():
                 reasons_list.append(f"High ensembled anomaly score ({row['risk_score']:.2f})")
         df_pred["top_reason"] = reasons_list
 
-    # Ensure coordinates are parsed in raw logs
+    # Ensure coordinates are parsed in raw logs (safely check for geo_location)
     if "lat" not in df_logs.columns or "lon" not in df_logs.columns:
-        df_logs["geo_parsed"] = df_logs["geo_location"].apply(safe_json_loads)
-        df_logs["lat"] = df_logs["geo_parsed"].apply(lambda x: x.get("lat", 0.0))
-        df_logs["lon"] = df_logs["geo_parsed"].apply(lambda x: x.get("lon", 0.0))
+        if "geo_location" in df_logs.columns:
+            df_logs["geo_parsed"] = df_logs["geo_location"].apply(safe_json_loads)
+            df_logs["lat"] = df_logs["geo_parsed"].apply(lambda x: x.get("lat", 0.0))
+            df_logs["lon"] = df_logs["geo_parsed"].apply(lambda x: x.get("lon", 0.0))
+        else:
+            if "lat" not in df_logs.columns:
+                df_logs["lat"] = 0.0
+            if "lon" not in df_logs.columns:
+                df_logs["lon"] = 0.0
 
     profiles_path = "models/entity_profiles.pkl"
     entity_profiles = joblib.load(profiles_path) if os.path.exists(profiles_path) else {}
@@ -590,8 +596,11 @@ elif st.session_state.current_page == "Alert Detail":
         st.markdown('<div class="section-title">RECENT USER ENTITY ACTIVITY AUDIT LOG (LAST 5 CHRONOLOGICAL EVENTS)</div>', unsafe_allow_html=True)
         recent_5_events = df_logs[df_logs["entity_id"] == target_entity].sort_values("timestamp").tail(5)
         if len(recent_5_events) > 0:
-            disp_recent = recent_5_events[["event_id", "timestamp", "source_ip", "resource_accessed", "auth_method", "session_duration"]].copy()
-            disp_recent["timestamp"] = pd.to_datetime(disp_recent["timestamp"]).dt.strftime("%Y-%m-%d %H:%M:%S")
+            desired_cols = ["event_id", "timestamp", "source_ip", "resource_accessed", "auth_method", "session_duration", "predicted_attack_type", "risk_score"]
+            avail_cols = [c for c in desired_cols if c in recent_5_events.columns]
+            disp_recent = recent_5_events[avail_cols].copy()
+            if "timestamp" in disp_recent.columns:
+                disp_recent["timestamp"] = pd.to_datetime(disp_recent["timestamp"]).dt.strftime("%Y-%m-%d %H:%M:%S")
             st.dataframe(disp_recent, use_container_width=True, hide_index=True)
         else:
             st.info("No raw audit logs recorded for this entity.")
