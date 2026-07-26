@@ -12,20 +12,21 @@ env/
 .vscode/
 .idea/
 
-# Large Datasets, CSVs, and JSONs in data directories
+# Large Datasets in data directories (except deployment phase4 predictions)
 data/raw/*.csv
 data/raw/*.json
 data/processed/*.csv
 data/processed/*.json
 
-# Keep gitkeep files tracked
+!data/processed/phase4_predictions.csv
+!data/processed/live_events.jsonl
 !data/raw/.gitkeep
 !data/processed/.gitkeep
 
-# Model checkpoints & serialized artifacts
-models/*.pkl
-models/*.h5
-models/*.pt
+# Model checkpoints & serialized artifacts tracked for deployment
+!models/*.pkl
+!models/*.h5
+!models/*.pt
 
 # Archives & OS Metadata
 *.tar.gz
