@@ -126,9 +126,12 @@ class PipelineThreatClassifierTrainer:
         df_labels = pd.read_csv("data/raw/labels.csv")
         df_p3 = pd.read_csv("data/processed/phase3_scores.csv")
 
-        # Merge on event_id
+        # Merge on event_id (left join to preserve all log events)
         df = pd.merge(df_logs, df_labels, on="event_id")
-        df = pd.merge(df, df_p3[["event_id", "score_ensemble", "threshold", "is_anomaly"]], on="event_id")
+        df = pd.merge(df, df_p3[["event_id", "score_ensemble", "threshold", "is_anomaly"]], on="event_id", how="left")
+        df["score_ensemble"] = df["score_ensemble"].fillna(0.5)
+        df["threshold"] = df["threshold"].fillna(0.8)
+        df["is_anomaly"] = df["is_anomaly"].fillna(0)
 
         # Parse timestamps and sort chronologically
         df["timestamp"] = pd.to_datetime(df["timestamp"], format="ISO8601")
