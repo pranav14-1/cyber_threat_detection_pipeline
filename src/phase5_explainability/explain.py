@@ -76,8 +76,10 @@ def get_feature_narrative(feature_name: str, feature_value: float, attack_type: 
         return f"Excessive data volume transferred ({val:,.0f} bytes)"
     elif "score_ensemble" in fn:
         return f"High ensembled anomaly score ({val:.2f}) from combined baseline and sequence models"
-    elif "cold_start" in fn:
-        return "Entity has sparse historical log activity, using fallback global population baseline"
+    elif "profile_decay_factor" in fn:
+        return f"Baseline decay factor of {val:.2f} indicates potential concept drift or dormant account activity"
+    elif "is_cold_start" in fn or "cold_start" in fn:
+        return "Entity has sparse historical log activity (<5 events), using global population baseline fallback"
     else:
         return f"Elevated anomaly contribution from feature '{feature_name}' (value: {val:.2f})"
 
@@ -196,9 +198,10 @@ class ExplainabilityEngine:
         
         risk_score = float(row.get("score_ensemble", confidence))
         
-        # 3. Check for Cold-Start status
+        # 3. Check for Cold-Start status (< 5 historical events)
         profile = self.classifier_payload.entity_profiles.get(entity_id, {})
-        cold_start = bool(profile.get("num_events", 0) < 10)
+        is_cold = float(row.get("is_cold_start", row.get("cold_start", 0.0))) == 1.0 or profile.get("num_events", 0) < 5
+        cold_start = bool(is_cold)
         
         # 4. Feature Attributions Calculation (SHAP + Sequence Reconstruction + Rule Overrides)
         reasons = []

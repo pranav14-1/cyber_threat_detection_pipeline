@@ -337,10 +337,11 @@ class PipelineThreatClassifierTrainer:
         df_flagged["target_class"] = target_labels
 
         feature_cols = [
-            # Phase 2 features
+            # Phase 2 features & cold start / decay markers
             "hour_of_day", "day_of_week", "is_weekend", "session_duration", "norm_session_duration",
             "geo_distance_from_centroid_km", "resource_novelty", "device_fingerprint_hash_novelty",
             "auth_password", "auth_token", "auth_certificate", "auth_biometric", "cold_start",
+            "is_cold_start", "profile_decay_factor",
             # Phase 3 error breakdown
             "rec_err_duration", "rec_err_hour_sin", "rec_err_hour_cos", "rec_err_geo_dist",
             "rec_err_resource", "rec_err_auth", "rec_err_os",
@@ -370,12 +371,13 @@ class PipelineThreatClassifierTrainer:
 
             sw_tr = compute_sample_weight('balanced', y_tr)
             clf = XGBClassifier(
-                n_estimators=150,
-                learning_rate=0.08,
+                n_estimators=200,
+                learning_rate=0.05,
                 max_depth=6,
                 subsample=0.8,
+                colsample_bytree=0.8,
                 max_delta_step=1,
-                random_state=self.seed,
+                random_state=42,
                 eval_metric='mlogloss',
                 n_jobs=-1
             )
@@ -411,12 +413,13 @@ class PipelineThreatClassifierTrainer:
         print("Training final XGBoost threat classifier on all flagged anomaly data...")
         sw_full = compute_sample_weight('balanced', y)
         final_model = XGBClassifier(
-            n_estimators=150,
-            learning_rate=0.08,
+            n_estimators=200,
+            learning_rate=0.05,
             max_depth=6,
             subsample=0.8,
+            colsample_bytree=0.8,
             max_delta_step=1,
-            random_state=self.seed,
+            random_state=42,
             eval_metric='mlogloss',
             n_jobs=-1
         )

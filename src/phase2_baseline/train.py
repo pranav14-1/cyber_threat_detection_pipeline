@@ -70,7 +70,7 @@ class StatisticalProfiler:
         """Fit KDE models for entity and global log hour densities."""
         self.kdes = {}
         for ent_id, prof in self.entity_profiles.items():
-            if prof.get("num_events", 0) >= 10:
+            if prof.get("num_events", 0) >= 5:
                 hours = prof.get("hours", [])
                 if len(hours) > 0 and np.var(hours) >= 1e-4:
                     try:
@@ -224,9 +224,10 @@ class PipelineBaselineTrainer:
             dur_mean = float(np.mean(durs))
             dur_std = float(np.std(durs)) if len(durs) > 1 else 10.0
             
-            # Time of day
+            # Time of day & timestamp recency reference for profile decay
             hours = (group["timestamp"].dt.hour + group["timestamp"].dt.minute / 60.0).values
-            
+            last_ts_sec = float(group["timestamp"].max().timestamp()) if len(group) > 0 else 0.0
+
             entity_profiles[entity_id] = {
                 "num_events": num_evs,
                 "home_lat_lon": (mean_lat, mean_lon),
@@ -235,7 +236,8 @@ class PipelineBaselineTrainer:
                 "typical_devices": macs,
                 "session_duration_mean": dur_mean,
                 "session_duration_std": dur_std,
-                "hours": hours.tolist()
+                "hours": hours.tolist(),
+                "last_timestamp_sec": last_ts_sec
             }
             
         # Global Population Profile (Fallback)
@@ -273,6 +275,7 @@ class PipelineBaselineTrainer:
         
         entity_ids = df["entity_id"].values
         timestamps = pd.to_datetime(df["timestamp"], format="ISO8601")
+        ts_secs = (timestamps.astype("int64") // 10**9).values
         hours = (timestamps.dt.hour + timestamps.dt.minute / 60.0).values
         days_of_week = timestamps.dt.dayofweek.values
         is_weekends = (days_of_week >= 5).astype(int)
@@ -295,16 +298,25 @@ class PipelineBaselineTrainer:
             res = resources[idx]
             auth = auth_methods[idx]
             mac = macs[idx]
+            ts_sec = float(ts_secs[idx])
             
-            # Fetch profile with Cold-Start policy
+            # Fetch profile with Cold-Start policy (threshold < 5 events)
             profile = entity_profiles.get(entity_id, None)
-            if profile is not None and profile["num_events"] >= 10:
+            if profile is not None and profile.get("num_events", 0) >= 5:
                 cold_start = 0
+                is_cold_start = 0.0
                 audit_trail.append("cold_start=False")
             else:
                 profile = global_profile
                 cold_start = 1
+                is_cold_start = 1.0
                 audit_trail.append("cold_start=True")
+                
+            # Compute 7-day exponential profile decay factor (concept drift marker)
+            decay_lambda = np.log(2) / 7.0  # 7-day half-life
+            last_ts_sec = profile.get("last_timestamp_sec", ts_sec)
+            dt_days = max(0.0, (ts_sec - last_ts_sec) / 86400.0)
+            profile_decay_factor = float(np.exp(-decay_lambda * dt_days))
                 
             # Compute distances & novelties
             p_lat, p_lon = profile["home_lat_lon"]
@@ -336,13 +348,16 @@ class PipelineBaselineTrainer:
                 auth_tok,
                 auth_cert,
                 auth_bio,
-                cold_start
+                cold_start,
+                is_cold_start,
+                profile_decay_factor
             ])
             
         feature_cols = [
             "hour_of_day", "day_of_week", "is_weekend", "session_duration", "norm_session_duration",
             "geo_distance_from_centroid_km", "resource_novelty", "device_fingerprint_hash_novelty",
-            "auth_password", "auth_token", "auth_certificate", "auth_biometric", "cold_start"
+            "auth_password", "auth_token", "auth_certificate", "auth_biometric", "cold_start",
+            "is_cold_start", "profile_decay_factor"
         ]
         return pd.DataFrame(features, columns=feature_cols), audit_trail
 

@@ -27,6 +27,10 @@ models/*.pkl
 models/*.h5
 models/*.pt
 
+# Archives
+*.tar.gz
+*.zip
+
 # Keep gitkeep files tracked
 !models/.gitkeep
 !notebooks/.gitkeep

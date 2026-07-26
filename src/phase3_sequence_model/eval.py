@@ -115,6 +115,7 @@ def main():
     df_val = df.iloc[train_idx:val_idx].copy()
     df_test = df.iloc[val_idx:].copy()
     
+    y_val = (df_val["label"] != "normal").astype(int).values
     y_test = (df_test["label"] != "normal").astype(int).values
     
     # --------------------------------------------------------------------------
@@ -268,16 +269,20 @@ def main():
     })
     df_roll_norm = apply_rolling_normalization(df_roll, window_size="30D")
     
-    # Calibrate alert flagging threshold using validation ensemble scores
+    # Calibrate alert flagging threshold using validation ensemble scores on benign samples (FPR <= 1% / 99th percentile)
     val_len = len(df_val)
-    # Extract validation slice from combined scores (chronological train then val then test)
     val_start = train_idx
     val_end = val_idx
     val_ensemble_scores = all_scores_ensemble[val_start:val_end]
     
-    # We flag using config alert threshold percentile (e.g. 95th percentile, top 5% flags)
-    alert_percentile = float(config.get("alert_threshold_percentile", 0.95)) * 100.0
-    ensemble_threshold = np.percentile(val_ensemble_scores, alert_percentile)
+    val_benign_mask = (y_val == 0)
+    if np.sum(val_benign_mask) > 0:
+        val_benign_scores = val_ensemble_scores[val_benign_mask]
+        ensemble_threshold = float(np.percentile(val_benign_scores, 99.0))
+        print(f"Calibrated sequence threshold on validation benign samples (99th percentile, FPR@1%): {ensemble_threshold:.4f}")
+    else:
+        alert_percentile = float(config.get("alert_threshold_percentile", 0.95)) * 100.0
+        ensemble_threshold = float(np.percentile(val_ensemble_scores, alert_percentile))
     is_anomaly_flags = (all_scores_ensemble >= ensemble_threshold).astype(bool)
     
     df_out_scores = pd.DataFrame({

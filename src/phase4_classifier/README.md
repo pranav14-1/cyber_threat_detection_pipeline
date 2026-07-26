@@ -17,16 +17,16 @@ XGBoost Multi-Class (8 classes: 7 attack types + `unknown`), balanced sample wei
 ## Results (5-Fold Stratified Cross-Validation)
 | Attack Type | Precision | Recall | F1-Score |
 |-------------|-----------|--------|----------|
-| `brute_force` | 1.0000 | 1.0000 | 1.0000 |
-| `credential_stuffing` | 1.0000 | 0.9904 | 0.9952 |
-| `device_spoofing` | 1.0000 | 0.9928 | 0.9964 |
-| `impossible_travel` | 0.2443 | 0.9980 | 0.3926 |
-| `insider_drift` | 0.8667 | 0.9630 | 0.9123 |
-| `lateral_movement` | 0.9828 | 0.9902 | 0.9865 |
-| `low_slow_exfil` | 0.9933 | 0.9886 | 0.9910 |
-| `unknown` | 0.9979 | 0.7131 | 0.8318 |
+| `brute_force` | 0.9974 | 1.0000 | 0.9987 |
+| `credential_stuffing` | 1.0000 | 0.9969 | 0.9984 |
+| `device_spoofing` | 1.0000 | 1.0000 | 1.0000 |
+| `impossible_travel` | 0.9930 | 1.0000 | 0.9965 |
+| `insider_drift` | 0.6724 | 0.9435 | 0.7852 |
+| `lateral_movement` | 0.8662 | 0.9173 | 0.8910 |
+| `low_slow_exfil` | 0.9742 | 1.0000 | 0.9869 |
+| `unknown` | 0.9945 | 0.9660 | 0.9800 |
 
-**Macro F1-Score:** `0.8882`
+**Macro F1-Score:** `0.9546`
 
 ## Artifacts
 - `models/classifier.pkl`

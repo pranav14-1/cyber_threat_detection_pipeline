@@ -15,16 +15,16 @@ The model performance was evaluated using a chronological split (70% train / 15%
 
 | Model | ROC-AUC | PR-AUC | FPR@1% |
 |-------|---------|--------|--------|
-| StatProfile | 0.9232 | 0.1995 | 0.0069 |
-| IForest | 0.7796 | 0.1257 | 0.0080 |
-| OC-SVM | 0.7367 | 0.2734 | 0.0063 |
+| StatProfile | 0.9233 | 0.2013 | 0.0069 |
+| IForest | 0.7690 | 0.1115 | 0.0079 |
+| OC-SVM | 0.7342 | 0.2730 | 0.0063 |
 
 **Selected Best Model:** `StatProfile`
 
 **Test Set Evaluation Metrics (Best Model):**
-- **ROC-AUC:** 0.9072
-- **PR-AUC:** 0.2258
-- **FPR@1%:** 0.0053
+- **ROC-AUC:** 0.9070
+- **PR-AUC:** 0.2246
+- **FPR@1%:** 0.0054
 
 ## Cold-Start Policy
 Entities with <10 events in the training data use a fallback global population profile, logging a `"cold_start=True"` audit trail flag.
